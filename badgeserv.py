@@ -26,7 +26,11 @@ def consoleWithTime(str):
 cwt = consoleWithTime
 
 '''#####
- Handler for incoming websock messages
+ Handler for incoming websock messages. Has four modes:
+ echo	Repeats whatever the stream receives
+ ping	Replies pong as a JSON object
+ client	Client operations
+ admin	Admin operations
 #####'''
 async def handleMessage(socket, path):
 	req_type = path.strip('/').lower().split('/')[0]
