@@ -29,8 +29,10 @@ dummy_response = dict(
 '''#####
  Util functions
 #####'''
-def consoleWithTime(str):
-	print("[{}] {}".format(datetime.now().time(), str))
+def consoleWithTime(input):
+	print("[{}] {}".format(
+		str(datetime.now().time())[:12],
+		input))
 cwt = consoleWithTime
 
 
