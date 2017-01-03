@@ -30,9 +30,9 @@ dummy_response = dict(
  Util functions
 #####'''
 def consoleWithTime(input):
-	print("[{}] {}".format(
-		str(datetime.now().time())[:12],
-		input))
+	print("[{}] {}".format(					#[Timestamp] input
+		str(datetime.now().time())[:12],	#Truncate the timestamp to HH:MM:SS.mmm
+		input))								#And then the actual thing we want to print
 cwt = consoleWithTime
 
 
