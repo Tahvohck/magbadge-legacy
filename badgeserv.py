@@ -43,7 +43,7 @@ magapiopts = dict(
 				#"method":	"attendee.lookup",
 				"id":		"magbadgeserver-staffsuite"},
 	timeout = 3,
-#	url = "https://onsite.uber.magfest.org/jsonrpc/"
+#	url = "https://onsite.uber.magfest.org:4444/jsonrpc/"
 	url = "https://httpbin.org/post"
 )
 
