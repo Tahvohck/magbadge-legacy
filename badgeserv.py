@@ -56,6 +56,30 @@ def consoleWithTime(input):
 		input))								#And then the actual thing we want to print
 cwt = consoleWithTime
 
+'''#####
+ Get badge information based on a scanned badge and form a dict based on the response
+#####'''
+async def getScannedBadgeInfo(badge):
+	magapiopts_lcl = magapiopts		#Create a connection-local copy of the request data
+	badge_info = dict(r_code = 500, r_text = "Unknown server error")
+
+	#TODO: Get an API key and write the request code
+	magapiopts_lcl["json"]["params"] = badge
+	# Create a future that runs requests.post with the exploded copy of magapiopts as an argument.
+	future_response = loop.run_in_executor(None, functools.partial(requests.post, **magapiopts_lcl))
+	try:
+		rpc_resp = json.loads(await future_response)
+		badge_info["name"]		= rpc_resp["full_name"]
+		badge_info["badge"]		= "NULL BADGE" #rpc_resp["badge_num"]
+		badge_info["badge_n"]	= rpc_resp["badge_num"]
+		badge_info["badge_t"]	= rpc_resp["badge_type_label"]
+		badge_info["hr_total"]	= rpc_resp["weighted_hours"]
+		badge_info["hr_worked"]	= rpc_resp["worked_hours"]
+	except requests.exceptions.ConnectTimeout:
+		cwt("Check for badge {} timed out after {} seconds".format(badge, magapiopts_lcl["timeout"]))
+		badge_info["r_code"] = 504
+		badge_info["r_text"] = "Magfest API timed out after {} seconds.".format(badge, magapiopts_lcl["timeout"])
+
 
 '''#####
  Handler for incoming websock messages. Has four modes:
@@ -87,8 +111,7 @@ async def handleMessage(socket, path):
 	#####
 	# Client Functionality
 	elif req_type == 'client':
-		cwt("New connection at {}:{}".format(socket.remote_address[0], socket.remote_address[1]))
-		magapiopts_lcl = magapiopts		#Create a connection-local copy of the request data
+		cwt("New client connection at {}:{}".format(socket.remote_address[0], socket.remote_address[1]))
 
 		# As long as the connection is open, wait for and act on data
 		while socket.open:
@@ -101,15 +124,12 @@ async def handleMessage(socket, path):
 				if msgParsed["BID"] == "TEST":
 					cwt("Sending dummy data")
 					await socket.send(json.dumps(dummy_response, indent=2, sort_keys=True))
-
-				#TODO: Get an API key and write the request code
-				magapiopts_lcl['json']['params'] = msgParsed["BID"]
-				# Create a future that runs requests.post with the exploded copy of magapiopts as an argument.
-				future_response = loop.run_in_executor(None, functools.partial(requests.post, **magapiopts_lcl))
-				resp = await future_response
+				else:
+					await getScannedBadgeInfo(msgParsed["BID"])
 
 			except websockets.exceptions.ConnectionClosed: pass
 			except KeyError: cwt("Malformed client message: \n{}".format(json.dumps(msgParsed, indent=2, sort_keys=True)))
+		cwt("Client connection closed at {}:{}".format(socket.remote_address[0], socket.remote_address[1]))
 	# End Client Funtionality
 	#####
 
