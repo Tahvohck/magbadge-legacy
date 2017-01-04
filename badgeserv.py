@@ -130,7 +130,8 @@ async def handleMessage(socket, path):
 					cwt("Sending dummy data")
 					await socket.send(json.dumps(dummy_response, indent=2, sort_keys=True))
 				else:
-					await getScannedBadgeInfo(msgParsed["BID"])
+					badge_info = await getScannedBadgeInfo(msgParsed["BID"])
+					await socket.send(json.dumps(badge_info))
 
 			except websockets.exceptions.ConnectionClosed: pass
 			except KeyError: cwt("Malformed client message: \n{}".format(json.dumps(msgParsed, indent=2, sort_keys=True)))
