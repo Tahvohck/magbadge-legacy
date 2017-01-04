@@ -69,7 +69,7 @@ async def getScannedBadgeInfo(badge):
 	# Create a future that runs requests.post with the exploded copy of magapiopts as an argument.
 	future_response = loop.run_in_executor(None, functools.partial(requests.post, **magapiopts_lcl))
 	try:
-		rpc_resp = json.loads(await future_response)
+		rpc_resp = json.loads((await future_response).text)
 		badge_info["name"]		= rpc_resp["full_name"]
 		badge_info["badge"]		= "NULL BADGE" #rpc_resp["badge_num"]
 		badge_info["badge_n"]	= rpc_resp["badge_num"]
@@ -80,6 +80,10 @@ async def getScannedBadgeInfo(badge):
 		cwt("Check for badge {} timed out after {} seconds".format(badge, magapiopts_lcl["timeout"]))
 		badge_info["r_code"] = 504
 		badge_info["r_text"] = "Magfest API timed out after {} seconds.".format(badge, magapiopts_lcl["timeout"])
+	except KeyError as e:
+		cwt("Response did not have an expected key [{}]".format(e.args[0]))
+	finally:
+		return badge_info
 
 
 '''#####
