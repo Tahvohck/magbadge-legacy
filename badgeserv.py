@@ -76,10 +76,16 @@ async def getScannedBadgeInfo(badge):
 		badge_info["badge_t"]	= rpc_resp["badge_type_label"]
 		badge_info["hr_total"]	= rpc_resp["weighted_hours"]
 		badge_info["hr_worked"]	= rpc_resp["worked_hours"]
+		badge_info["r_code"]	= 200
+		badge_info["r_text"]	= "Badge checked"
 	except requests.exceptions.ConnectTimeout:
 		cwt("Check for badge {} timed out after {} seconds".format(badge, magapiopts_lcl["timeout"]))
 		badge_info["r_code"] = 504
 		badge_info["r_text"] = "Magfest API timed out after {} seconds.".format(badge, magapiopts_lcl["timeout"])
+	except requests.exceptions.ConnectionError as e:
+		cwt("Connection error to MAGAPI\n{}".format(e).replace(": ", ":\n"))
+		badge_info["r_code"] = 503
+		badge_info["r_text"] = "Issue connecting to MAGAPI"
 	except KeyError as e:
 		cwt("Response did not have an expected key [{}]".format(e.args[0]))
 	finally:
