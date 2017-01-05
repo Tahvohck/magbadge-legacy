@@ -217,6 +217,7 @@ signal.signal(signal.SIGINT, stoprun)
 
 #######
 # Bootstrap code
+VERSION    = "1.1"
 date		= datetime.now().date()
 DoW			= date.strftime("%A")
 digit_only	= re.compile('^[0-9]+$')
