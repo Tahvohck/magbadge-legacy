@@ -69,7 +69,8 @@ async def getScannedBadgeInfo(badge):
 	# Create a future that runs requests.post with the exploded copy of magapiopts as an argument.
 	future_response = loop.run_in_executor(None, functools.partial(requests.post, **magapiopts_lcl))
 	try:
-		rpc_resp = json.loads((await future_response).text)
+		raw_rpc_resp = await future_response
+		rpc_resp = raw_rpc_resp.json()
 		badge_info["name"]		= rpc_resp["full_name"]
 		badge_info["badge"]		= "NULL BADGE" #rpc_resp["badge_num"]
 		badge_info["badge_n"]	= rpc_resp["badge_num"]
