@@ -1,1 +1,85 @@
-/srv/web/pages/Tahvohck/badgecheck.html
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+	<title>Badge Check</title>
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+	<link rel="stylesheet" href="/badgecheck.css">
+
+</head>
+<body>
+	<div class="site-wrapper">
+
+		<div class="site-wrapper-inner">
+
+
+
+				<div class="inner cover">
+					<p class="lead">Click the button to look up the badge ID. (Or just scan it in)</p>
+					<div class="form-group">
+						<input id="badgeID" type="text" maxlength="6" placeholder="Scan Badge" class="form-control input-lg" onkeydown="tBox_keydown(this, event);" onClick="this.select()" autocomplete="off" autofocus>
+					</div>
+					<div class="form-group">
+						<button id="button" onClick="sendBadge()" class="btn btn-default btn-lg">Check Badge</button>
+					</div>
+					<h1 class="alert alert-success cover-heading" id="response">Result will show up here.</h1>
+				</div>
+
+
+			</div>
+
+
+	</div>
+
+
+<script>
+var res_box	= document.getElementById('response')
+var button	= document.getElementById('button')
+var input	= document.getElementById('badgeID')
+console.log(res_box.innerHTML)
+
+function tBox_keydown(element, event) {
+	if (event.keyCode == 13) {
+		button.click()
+		element.select()
+	}
+}
+
+
+var socket = new WebSocket("ws://192.168.1.105:28000/client")
+socket.onmessage = function(response) {
+	data = JSON.parse(response.data)
+	if (data.r_code == 200){
+		var res_final = data.name + " has worked " +
+						data.hr_worked + " of " +
+						data.hr_total + " hours. <br>They have a " +
+						data.badge_t + " badge."
+		res_box.innerHTML = res_final
+	} else {
+		res_box.innerHTML = data.r_text
+	}
+}
+socket.onclose = function(event) {
+	res_box.innerHTML = "Socket closed, please refresh. Here's some data:<br>" +
+						"Close code: " + event.code +
+						" | Close clean: " + (event.wasClean ? "Yes" : "No") + "<br>" +
+						"Close reason: " + event.reason + "<br>"
+	button.disabled = true
+}
+
+
+function sendBadge() {
+	console.log(input.value)
+	data = {action	: "BGCHK",
+			BID		: input.value}
+	res_box.innerHTML = "Checking badge..."
+	socket.send(JSON.stringify(data))
+}
+button.disabled = false
+</script>
+
+</body>
+</html>
