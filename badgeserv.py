@@ -14,7 +14,7 @@ import websockets
 #####'''
 addr	= ''
 port	= 28000
-logfile	= ""
+logfile	= "Thursday-breakfast.csv"
 
 VERSION	= "0.1a"
 date	= datetime.now().date()
@@ -188,14 +188,6 @@ async def checkShutdown():
 	cwt("shutdown")
 
 
-if addr == '':	addr_human = "localhost"
-else:			addr_human = addr
-shutdown = False
-cwt("Server v{} starting on {} ({})".format(VERSION, date, DoW))
-server = websockets.serve(handleMessage, addr, port)
-cwt("  Listening on {}:{}".format(addr_human, port))
-
-
 #######
 # Handler for SIGINT
 def stoprun(a, ab):
@@ -206,6 +198,15 @@ def stoprun(a, ab):
 	exit()
 signal.signal(signal.SIGINT, stoprun)
 
+
+#######
+# Bootstrap code
+if addr == '':	addr_human = "localhost"
+else:			addr_human = addr
+shutdown = False
+cwt("Server v{} starting on {} ({})".format(VERSION, date, DoW))
+server = websockets.serve(handleMessage, addr, port)
+cwt("  Listening on {}:{}".format(addr_human, port))
 
 loop = asyncio.get_event_loop()
 loop.run_until_complete(server)
