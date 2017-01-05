@@ -21,7 +21,6 @@ date	= datetime.now().date()
 DoW		= date.strftime("%A")
 pending	= {}
 actions = ["NULL",'RECON','BGCHK','CONFIG']
-connections	= {}
 # This dictionary defines the dummy reply when checking the badge "TEST"
 dummy_response = dict(
 	name		= "Edward Richardson",
@@ -158,6 +157,16 @@ async def handleMessage(socket, path):
 				else:
 					badge_info = await getScannedBadgeInfo(msgParsed["BID"])
 					await socket.send(json.dumps(badge_info))
+					if badge_info["r_code"] == 200:
+						entry = ""
+						entry +="{},".format(str(datetime.now())[:19])
+						entry +="{},".format(badge_info["badge_t"])
+						entry +="{},".format(badge_info["badge_n"])
+						entry +="{},".format(badge_info["name"])
+						entry +="{},".format(badge_info["hr_total"])
+						entry +="{}\r\n".format(badge_info["hr_worked"])
+						with open("logs/{}".format(logfile), 'a') as lfile:
+							lfile.write(entry)
 
 			except websockets.exceptions.ConnectionClosed: pass
 			except KeyError: cwt("Malformed client message: \n{}".format(json.dumps(msgParsed, indent=2, sort_keys=True)))
