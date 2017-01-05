@@ -14,7 +14,7 @@ import websockets
 #####'''
 addr	= ''
 port	= 28000
-logfile	= "Thursday-breakfast.csv"
+logfile	= "Thursday-lunch.csv"
 
 VERSION	= "0.1a"
 date	= datetime.now().date()
