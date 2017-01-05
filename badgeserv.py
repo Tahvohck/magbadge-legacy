@@ -106,31 +106,31 @@ async def getScannedBadgeInfo(badge):
 #####'''
 async def handleMessage(socket, path):
 	req_type = path.strip('/').lower().split('/')[0]
+	cwt("{}-mode connection opened at {}:{}".format(req_type.capitalize(), socket.remote_address[0], socket.remote_address[1]))
+	while socket.open:
 
-	#####
-	# Basic troubleshooting: Echo
-	if   req_type == 'echo':
-		msg = await socket.recv()
-		cwt("Asked to echo the following:\n{}".format(msg))
-		await socket.send(msg)
+		#####
+		# Basic troubleshooting: Echo
+		if   req_type == 'echo':
+			msg = await socket.recv()
+			cwt("Asked to echo the following:\n{}".format(msg))
+			await socket.send(msg)
 
-	#####
-	# Basic troubleshooting: Ping
-	elif req_type == 'ping':
-		pre = datetime.now()
-		await socket.ping()
-		diff = datetime.now() - pre
-		cwt("Ping: {}ms".format(diff.microseconds/1000))
-		resp = '{{"Pong":{{"{}","{}"}}}}'.format(diff.seconds, diff.microseconds)
-		await socket.send(resp)
+		#####
+		# Basic troubleshooting: Ping
+		elif req_type == 'ping':
+			pre = datetime.now()
+			await socket.ping()
+			diff = datetime.now() - pre
+			cwt("Ping: {}ms".format(diff.microseconds/1000))
+			resp = '{{"Pong":{{"{}","{}"}}}}'.format(diff.seconds, diff.microseconds)
+			await socket.send(resp)
 
-	#####
-	# Client Functionality
-	elif req_type == 'client':
-		cwt("New client connection at {}:{}".format(socket.remote_address[0], socket.remote_address[1]))
+		#####
+		# Client Functionality
+		elif req_type == 'client':
 
-		# As long as the connection is open, wait for and act on data
-		while socket.open:
+			# As long as the connection is open, wait for and act on data
 			try:
 				msg = await socket.recv()
 				msgParsed = json.loads(msg)
@@ -146,17 +146,18 @@ async def handleMessage(socket, path):
 
 			except websockets.exceptions.ConnectionClosed: pass
 			except KeyError: cwt("Malformed client message: \n{}".format(json.dumps(msgParsed, indent=2, sort_keys=True)))
-		cwt("Client connection closed at {}:{}".format(socket.remote_address[0], socket.remote_address[1]))
-	# End Client Funtionality
-	#####
+		# End Client Funtionality
+		#####
 
-	#####
-	# Admin Functionality
-	elif req_type == 'admin': pass
-	# End Admin Functionality
+		#####
+		# Admin Functionality
+		elif req_type == 'admin': pass
+		# End Admin Functionality
 
-	else:
-		cwt("Unknown request mode: {}".format(path))
+		else:
+			cwt("Unknown request mode: {} (Closing connection)".format(path))
+			break
+	cwt("{}-mode connection closed at {}:{}".format(req_type.capitalize(), socket.remote_address[0], socket.remote_address[1]))
 # End handleMessage
 ########
 
