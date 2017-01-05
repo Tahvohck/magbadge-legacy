@@ -95,6 +95,18 @@ async def getScannedBadgeInfo(badge):
 
 	except KeyError as e:
 		cwt("Response did not have an expected key [{}]".format(e.args[0]))
+		if "error" in raw_rpc_resp.json():
+			rpc_resp = raw_rpc_resp.json()
+			badge_info["r_text"] = "[Server error] Code: {}<br>Error: {}".format(rpc_resp["error"]["code"], rpc_resp["error"]["message"])
+		elif "error" in rpc_resp:
+			badge_info["r_text"] = rpc_resp["error"]
+		else:
+			cwt("Fallback KeyError")
+			print(json.dumps(raw_rpc_resp.json(), indent=2, sort_keys=True))
+			errorjson = open("json-issue-{}.error".format(datetime.now().date()), 'w')
+			errorjson.write(json.dumps(raw_rpc_resp.json(), indent=2, sort_keys=True))
+			errorjson.close()
+		cwt(badge_info["r_text"])
 
 	finally:
 		return badge_info
