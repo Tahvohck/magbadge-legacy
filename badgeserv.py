@@ -106,6 +106,21 @@ async def getBadgeByNumber(badge):
 
 
 '''#####
+ Awaitable funtion to log badge to csv
+#####'''
+def logBadgeToFile(badge_info):
+	entry = ""
+	entry +="{},".format(str(datetime.now())[:19])
+	entry +="{},".format(badge_info["badge_t"])
+	entry +="{},".format(badge_info["badge_n"])
+	entry +="{},".format(badge_info["name"])
+	entry +="{},".format(badge_info["hr_total"])
+	entry +="{}\r\n".format(badge_info["hr_worked"])
+	with open("logs/{}".format(logfile), 'a') as lfile:
+		lfile.write(entry)
+
+
+'''#####
  Handler for incoming websock messages. Has four modes:
  echo	Repeats whatever the stream receives
  ping	Replies pong as a JSON object
@@ -154,17 +169,11 @@ async def handleMessage(socket, path):
 						badge_info = await getBadgeByNumber(msgParsed["BID"])
 					else:
 						badge_info = await getBadgeGeneric(msgParsed["BID"], magapiopts)
+
 					await socket.send(json.dumps(badge_info))
+					#Log to file if we were successful
 					if badge_info["r_code"] == 200:
-						entry = ""
-						entry +="{},".format(str(datetime.now())[:19])
-						entry +="{},".format(badge_info["badge_t"])
-						entry +="{},".format(badge_info["badge_n"])
-						entry +="{},".format(badge_info["name"])
-						entry +="{},".format(badge_info["hr_total"])
-						entry +="{}\r\n".format(badge_info["hr_worked"])
-						with open("logs/{}".format(logfile), 'a') as lfile:
-							lfile.write(entry)
+						logBadgeToFile(badge_info)
 
 			except websockets.exceptions.ConnectionClosed: pass
 			except KeyError: cwt("Malformed client message: \n{}".format(json.dumps(msgParsed, indent=2, sort_keys=True)))
