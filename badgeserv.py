@@ -57,6 +57,7 @@ async def getBadgeGeneric(badge, apiopts):
 		badge_info["name"]		= rpc_resp["full_name"]
 		badge_info["badge_n"]	= rpc_resp["badge_num"]
 		badge_info["badge_t"]	= rpc_resp["badge_type_label"]
+		badge_info["ribbon"]	= rpc_resp["ribbon_label"]
 		badge_info["hr_total"]	= rpc_resp["weighted_hours"]
 		badge_info["hr_worked"]	= rpc_resp["worked_hours"]
 		badge_info["r_code"]	= 200
