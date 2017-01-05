@@ -87,6 +87,10 @@ async def getScannedBadgeInfo(badge):
 		cwt("Connection error to MAGAPI\n{}".format(e).replace(": ", ":\n"))
 		badge_info["r_code"] = 503
 		badge_info["r_text"] = "Issue connecting to MAGAPI"
+	except ValueError as e:
+		cwt("Failed request to MAGAPI, API response code was: {}".format(raw_rpc_resp.status_code))
+		badge_info["r_code"] = 503
+		badge_info["r_text"] = "MAGAPI did not return a JSON, code was: {}".format(raw_rpc_resp.status_code)
 	except KeyError as e:
 		cwt("Response did not have an expected key [{}]".format(e.args[0]))
 	finally:
