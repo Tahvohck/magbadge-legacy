@@ -24,12 +24,13 @@ actions = ["NULL",'RECON','BGCHK','CONFIG']
 connections	= {}
 # This dictionary defines the dummy reply when checking the badge "TEST"
 dummy_response = dict(
-	name		= dict(first="Edward", last="Richardson"),
+	name		= "Edward Richardson",
 	badge		= "RRU-28413",
 	badge_t		= "staff",
 	badge_n		= 765,
 	hr_total	= 30,
-	hr_worked	= 0
+	hr_worked	= 0,
+	r_code		= 200
 )
 # Dictionary that defines the connection data that will later be exploded for requests.post()
 magapiopts = dict(
