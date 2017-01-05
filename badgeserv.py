@@ -80,7 +80,7 @@ async def getScannedBadgeInfo(badge):
 	except requests.exceptions.ConnectTimeout:
 		cwt("Check for badge {} timed out after {} seconds".format(badge, magapiopts_lcl["timeout"]))
 		badge_info["r_code"] = 504
-		badge_info["r_text"] = "Magfest API timed out after {} seconds.".format(badge, magapiopts_lcl["timeout"])
+		badge_info["r_text"] = "Magfest API timed out after {} seconds.".format(magapiopts_lcl["timeout"])
 
 	except requests.exceptions.ConnectionError as e:
 		cwt("Connection error to MAGAPI\n{}".format(e).replace(": ", ":\n"))
