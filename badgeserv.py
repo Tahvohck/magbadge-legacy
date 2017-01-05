@@ -11,32 +11,18 @@ import websockets
 
 
 '''#####
- Global variables
+ Program settings
 #####'''
 addr	= ''
 port	= 28000
 logfile	= "Thursday-lunch.csv"
+crtfile	= "client.crt"
+keyfile	= "client.key"
 
-VERSION	= "0.1a"
-date	= datetime.now().date()
-DoW		= date.strftime("%A")
-pending	= {}
-digit_only	= re.compile('^[0-9]+$')
-actions = ["NULL",'RECON','BGCHK','CONFIG']
-# This dictionary defines the dummy reply when checking the badge "TEST"
-dummy_response = dict(
-	name		= "Edward Richardson",
-	badge		= "RRU-28413",
-	badge_t		= "staff",
-	badge_n		= 765,
-	hr_total	= 30,
-	hr_worked	= 0,
-	r_code		= 200
-)
 # Dictionary that defines the connection data that will later be exploded for requests.post()
 magapiopts = dict(
-	cert	= (	"client.crt",
-				"client.key"),
+	cert	= (	crtfile,
+				keyfile),
 	#Thankfully we don't have to worry about Content-Length in Python (Hurrah!)
 	headers	= {	"Content-Type": "application/json"},
 	json	= {	"jsonrpc":	"2.0",
@@ -222,9 +208,24 @@ signal.signal(signal.SIGINT, stoprun)
 
 #######
 # Bootstrap code
+date		= datetime.now().date()
+DoW			= date.strftime("%A")
+digit_only	= re.compile('^[0-9]+$')
+shutdown	= False
+actions		= ["NULL",'RECON','BGCHK','CONFIG']
 if addr == '':	addr_human = "localhost"
 else:			addr_human = addr
-shutdown = False
+# This dictionary defines the dummy reply when checking the badge "TEST"
+dummy_response = dict(
+	name		= "Edward Richardson",
+	badge		= "RRU-28413",
+	badge_t		= "staff",
+	badge_n		= 765,
+	hr_total	= 30,
+	hr_worked	= 0,
+	r_code		= 200
+)
+
 cwt("Server v{} starting on {} ({})".format(VERSION, date, DoW))
 server = websockets.serve(handleMessage, addr, port)
 cwt("  Listening on {}:{}".format(addr_human, port))
