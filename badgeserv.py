@@ -34,9 +34,8 @@ dummy_response = dict(
 )
 # Dictionary that defines the connection data that will later be exploded for requests.post()
 magapiopts = dict(
-	cert	= (	"",""),
-				#"magapi-client.crt",
-				#"magapi-client.key"),
+	cert	= (	"client.crt",
+				"client.key"),
 	#Thankfully we don't have to worry about Content-Length in Python (Hurrah!)
 	headers	= {	"Content-Type": "application/json"},
 	json	= {	"jsonrpc":	"2.0",
@@ -44,8 +43,7 @@ magapiopts = dict(
 				#"method":	"attendee.lookup",
 				"id":		"magbadgeserver-staffsuite"},
 	timeout = 3,
-#	url = "https://onsite.uber.magfest.org:4444/jsonrpc/"
-	url = "https://httpbin.org/post"
+	url = "https://onsite.uber.magfest.org:4444/jsonrpc/"
 )
 
 
@@ -66,34 +64,38 @@ async def getScannedBadgeInfo(badge):
 	badge_info = dict(r_code = 500, r_text = "Unknown server error")
 
 	#TODO: Get an API key and write the request code
-	magapiopts_lcl["json"]["params"] = badge
+	magapiopts_lcl["json"]["params"] = [badge]
 	# Create a future that runs requests.post with the exploded copy of magapiopts as an argument.
 	future_response = loop.run_in_executor(None, functools.partial(requests.post, **magapiopts_lcl))
 	try:
 		raw_rpc_resp = await future_response
-		rpc_resp = raw_rpc_resp.json()
+		rpc_resp = raw_rpc_resp.json()["result"]
 		badge_info["name"]		= rpc_resp["full_name"]
-		badge_info["badge"]		= "NULL BADGE" #rpc_resp["badge_num"]
 		badge_info["badge_n"]	= rpc_resp["badge_num"]
 		badge_info["badge_t"]	= rpc_resp["badge_type_label"]
 		badge_info["hr_total"]	= rpc_resp["weighted_hours"]
 		badge_info["hr_worked"]	= rpc_resp["worked_hours"]
 		badge_info["r_code"]	= 200
 		badge_info["r_text"]	= "Badge checked"
+
 	except requests.exceptions.ConnectTimeout:
 		cwt("Check for badge {} timed out after {} seconds".format(badge, magapiopts_lcl["timeout"]))
 		badge_info["r_code"] = 504
 		badge_info["r_text"] = "Magfest API timed out after {} seconds.".format(badge, magapiopts_lcl["timeout"])
+
 	except requests.exceptions.ConnectionError as e:
 		cwt("Connection error to MAGAPI\n{}".format(e).replace(": ", ":\n"))
 		badge_info["r_code"] = 503
 		badge_info["r_text"] = "Issue connecting to MAGAPI"
+
 	except ValueError as e:
 		cwt("Failed request to MAGAPI, API response code was: {}".format(raw_rpc_resp.status_code))
 		badge_info["r_code"] = 503
 		badge_info["r_text"] = "MAGAPI did not return a JSON, code was: {}".format(raw_rpc_resp.status_code)
+
 	except KeyError as e:
 		cwt("Response did not have an expected key [{}]".format(e.args[0]))
+
 	finally:
 		return badge_info
 
