@@ -4,6 +4,7 @@ from asyncio	import Task
 import asyncio
 import functools
 import json
+import re
 import requests
 import signal
 import websockets
@@ -20,6 +21,7 @@ VERSION	= "0.1a"
 date	= datetime.now().date()
 DoW		= date.strftime("%A")
 pending	= {}
+digit_only	= re.compile('^[0-9]+$')
 actions = ["NULL",'RECON','BGCHK','CONFIG']
 # This dictionary defines the dummy reply when checking the badge "TEST"
 dummy_response = dict(
@@ -39,7 +41,6 @@ magapiopts = dict(
 	headers	= {	"Content-Type": "application/json"},
 	json	= {	"jsonrpc":	"2.0",
 				"method":	"barcode.lookup_attendee_from_barcode",
-				#"method":	"attendee.lookup",
 				"id":		"magbadgeserver-staffsuite"},
 	timeout = 3,
 	url = "https://onsite.uber.magfest.org:4444/jsonrpc/"
@@ -56,16 +57,14 @@ def consoleWithTime(input):
 cwt = consoleWithTime
 
 '''#####
- Get badge information based on a scanned badge and form a dict based on the response
+ Get badge information generically.
 #####'''
-async def getScannedBadgeInfo(badge):
-	magapiopts_lcl = magapiopts		#Create a connection-local copy of the request data
+async def getBadgeGeneric(badge, apiopts):
 	badge_info = dict(r_code = 500, r_text = "Unknown server error")
 
-	#TODO: Get an API key and write the request code
-	magapiopts_lcl["json"]["params"] = [badge]
+	apiopts["json"]["params"] = [badge]
 	# Create a future that runs requests.post with the exploded copy of magapiopts as an argument.
-	future_response = loop.run_in_executor(None, functools.partial(requests.post, **magapiopts_lcl))
+	future_response = loop.run_in_executor(None, functools.partial(requests.post, **apiopts))
 	try:
 		raw_rpc_resp = await future_response
 		rpc_resp = raw_rpc_resp.json()["result"]
@@ -78,9 +77,9 @@ async def getScannedBadgeInfo(badge):
 		badge_info["r_text"]	= "Badge checked"
 
 	except requests.exceptions.ConnectTimeout:
-		cwt("Check for badge {} timed out after {} seconds".format(badge, magapiopts_lcl["timeout"]))
+		cwt("Check for badge {} timed out after {} seconds".format(badge, apiopts["timeout"]))
 		badge_info["r_code"] = 504
-		badge_info["r_text"] = "Magfest API timed out after {} seconds.".format(magapiopts_lcl["timeout"])
+		badge_info["r_text"] = "Magfest API timed out after {} seconds.".format(apiopts["timeout"])
 
 	except requests.exceptions.ConnectionError as e:
 		cwt("Connection error to MAGAPI\n{}".format(e).replace(": ", ":\n"))
@@ -109,6 +108,15 @@ async def getScannedBadgeInfo(badge):
 
 	finally:
 		return badge_info
+
+
+'''#####
+ Get badge information based on a numerical badge and form a dict based on the response
+#####'''
+async def getBadgeByNumber(badge):
+	magapiopts_lcl = magapiopts		#Create a connection-local copy of the request data
+	magapiopts_lcl["json"]["method"] = "attendee.lookup"
+	return await getBadgeGeneric(badge, magapiopts_lcl)
 
 
 '''#####
@@ -155,7 +163,11 @@ async def handleMessage(socket, path):
 					cwt("Sending dummy data")
 					await socket.send(json.dumps(dummy_response, indent=2, sort_keys=True))
 				else:
-					badge_info = await getScannedBadgeInfo(msgParsed["BID"])
+					#Automatically determine badge type
+					if digit_only.match(msgParsed["BID"]):
+						badge_info = await getBadgeByNumber(msgParsed["BID"])
+					else:
+						badge_info = await getBadgeGeneric(msgParsed["BID"], magapiopts)
 					await socket.send(json.dumps(badge_info))
 					if badge_info["r_code"] == 200:
 						entry = ""
