@@ -11,7 +11,7 @@ function tBox_keydown(element, event) {
 }
 
 
-var socket = new WebSocket("ws://localhost:28000/client")
+var socket = new WebSocket("ws://kaeva.info:28000/client")
 socket.onmessage = function(response) {
 	data = JSON.parse(response.data)
 	if (data.r_code == 200){
