@@ -2,6 +2,7 @@ from datetime	import datetime
 from enum		import Enum
 from asyncio	import Task
 import asyncio
+import copy
 import functools
 import json
 import re
@@ -102,7 +103,7 @@ async def getBadgeGeneric(badge, apiopts):
  Get badge information based on a numerical badge and form a dict based on the response
 #####'''
 async def getBadgeByNumber(badge):
-	magapiopts_lcl = magapiopts		#Create a connection-local copy of the request data
+	magapiopts_lcl = copy.deepcopy(magapiopts)		#Create a connection-local copy of the request data
 	magapiopts_lcl["json"]["method"] = "attendee.lookup"
 	return await getBadgeGeneric(badge, magapiopts_lcl)
 
