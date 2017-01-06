@@ -11,14 +11,16 @@ function tBox_keydown(element, event) {
 }
 
 
-var socket = new WebSocket("ws://192.168.1.105:28000/client")
+var socket = new WebSocket("ws://localhost:28000/client")
 socket.onmessage = function(response) {
 	data = JSON.parse(response.data)
 	if (data.r_code == 200){
-		var res_final = data.name + " has worked " +
+		var res_final = "[" + data.badge_n + "] " +
+						data.badge_t + ", " +
+						data.ribbon + "<br>" +
+						data.name + " has worked " +
 						data.hr_worked + " of " +
-						data.hr_total + " hours. <br>They have a " +
-						data.badge_t + " badge."
+						data.hr_total + " hours. <br>"
 		res_box.innerHTML = res_final
 	} else {
 		res_box.innerHTML = data.r_text
