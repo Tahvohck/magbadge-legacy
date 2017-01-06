@@ -47,6 +47,7 @@ cwt = consoleWithTime
 #####'''
 async def getBadgeGeneric(badge, apiopts):
 	badge_info = dict(r_code = 500, r_text = "Unknown server error")
+	cwt("Looking up badge ID: {} via {}".format(badge, apiopts["json"]["method"]))
 
 	apiopts["json"]["params"] = [badge]
 	# Create a future that runs requests.post with the exploded copy of magapiopts as an argument.
@@ -159,14 +160,14 @@ async def handleMessage(socket, path):
 				msg = await socket.recv()
 				msgParsed = json.loads(msg)
 				if msgParsed["action"] != actions[2]: raise KeyError()	#Check for malformation
-				cwt("Looking up badge ID: {}".format(msgParsed["BID"]))
 
 				if msgParsed["BID"] == "TEST":
+					cwt("Looking up badge ID: {}".format(msgParsed["BID"]))
 					cwt("Sending dummy data")
 					await socket.send(json.dumps(dummy_response, indent=2, sort_keys=True))
 				else:
 					#Automatically determine badge type
-					if digit_only.match(msgParsed["BID"]):
+					if re.match(digit_regx, msgParsed["BID"]):
 						badge_info = await getBadgeByNumber(msgParsed["BID"])
 					else:
 						badge_info = await getBadgeGeneric(msgParsed["BID"], magapiopts)
@@ -221,7 +222,7 @@ signal.signal(signal.SIGINT, stoprun)
 VERSION    = "1.1"
 date		= datetime.now().date()
 DoW			= date.strftime("%A")
-digit_only	= re.compile('^[0-9]+$')
+digit_regx	= '^[0-9]+$'
 shutdown	= False
 actions		= ["NULL",'RECON','BGCHK','CONFIG']
 if addr == '':	addr_human = "localhost"
