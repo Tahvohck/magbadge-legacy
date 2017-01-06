@@ -11,32 +11,18 @@ import websockets
 
 
 '''#####
- Global variables
+ Program settings
 #####'''
 addr	= ''
 port	= 28000
-logfile	= "Thursday-lunch-gandg.csv"
+logfile	= "Thursday-dinner.csv"
+crtfile	= "client.crt"
+keyfile	= "client.key"
 
-VERSION	= "0.1a"
-date	= datetime.now().date()
-DoW		= date.strftime("%A")
-pending	= {}
-digit_only	= re.compile('^[0-9]+$')
-actions = ["NULL",'RECON','BGCHK','CONFIG']
-# This dictionary defines the dummy reply when checking the badge "TEST"
-dummy_response = dict(
-	name		= "Edward Richardson",
-	badge		= "RRU-28413",
-	badge_t		= "staff",
-	badge_n		= 765,
-	hr_total	= 30,
-	hr_worked	= 0,
-	r_code		= 200
-)
 # Dictionary that defines the connection data that will later be exploded for requests.post()
 magapiopts = dict(
-	cert	= (	"client.crt",
-				"client.key"),
+	cert	= (	crtfile,
+				keyfile),
 	#Thankfully we don't have to worry about Content-Length in Python (Hurrah!)
 	headers	= {	"Content-Type": "application/json"},
 	json	= {	"jsonrpc":	"2.0",
@@ -61,6 +47,7 @@ cwt = consoleWithTime
 #####'''
 async def getBadgeGeneric(badge, apiopts):
 	badge_info = dict(r_code = 500, r_text = "Unknown server error")
+	cwt("Looking up badge ID: {} via {}".format(badge, apiopts["json"]["method"]))
 
 	apiopts["json"]["params"] = [badge]
 	# Create a future that runs requests.post with the exploded copy of magapiopts as an argument.
@@ -71,6 +58,7 @@ async def getBadgeGeneric(badge, apiopts):
 		badge_info["name"]		= rpc_resp["full_name"]
 		badge_info["badge_n"]	= rpc_resp["badge_num"]
 		badge_info["badge_t"]	= rpc_resp["badge_type_label"]
+		badge_info["ribbon"]	= rpc_resp["ribbon_label"]
 		badge_info["hr_total"]	= rpc_resp["weighted_hours"]
 		badge_info["hr_worked"]	= rpc_resp["worked_hours"]
 		badge_info["r_code"]	= 200
@@ -120,6 +108,21 @@ async def getBadgeByNumber(badge):
 
 
 '''#####
+ Awaitable funtion to log badge to csv
+#####'''
+def logBadgeToFile(badge_info):
+	entry = ""
+	entry +="{},".format(str(datetime.now())[:19])
+	entry +="{},".format(badge_info["badge_t"])
+	entry +="{},".format(badge_info["badge_n"])
+	entry +="{},".format(badge_info["name"])
+	entry +="{},".format(badge_info["hr_total"])
+	entry +="{}\r\n".format(badge_info["hr_worked"])
+	with open("logs/{}".format(logfile), 'a') as lfile:
+		lfile.write(entry)
+
+
+'''#####
  Handler for incoming websock messages. Has four modes:
  echo	Repeats whatever the stream receives
  ping	Replies pong as a JSON object
@@ -157,28 +160,22 @@ async def handleMessage(socket, path):
 				msg = await socket.recv()
 				msgParsed = json.loads(msg)
 				if msgParsed["action"] != actions[2]: raise KeyError()	#Check for malformation
-				cwt("Looking up badge ID: {}".format(msgParsed["BID"]))
 
 				if msgParsed["BID"] == "TEST":
+					cwt("Looking up badge ID: {}".format(msgParsed["BID"]))
 					cwt("Sending dummy data")
 					await socket.send(json.dumps(dummy_response, indent=2, sort_keys=True))
 				else:
 					#Automatically determine badge type
-					if digit_only.match(msgParsed["BID"]):
+					if re.match(digit_regx, msgParsed["BID"]):
 						badge_info = await getBadgeByNumber(msgParsed["BID"])
 					else:
 						badge_info = await getBadgeGeneric(msgParsed["BID"], magapiopts)
+
 					await socket.send(json.dumps(badge_info))
+					#Log to file if we were successful
 					if badge_info["r_code"] == 200:
-						entry = ""
-						entry +="{},".format(str(datetime.now())[:19])
-						entry +="{},".format(badge_info["badge_t"])
-						entry +="{},".format(badge_info["badge_n"])
-						entry +="{},".format(badge_info["name"])
-						entry +="{},".format(badge_info["hr_total"])
-						entry +="{}\r\n".format(badge_info["hr_worked"])
-						with open("logs/{}".format(logfile), 'a') as lfile:
-							lfile.write(entry)
+						logBadgeToFile(badge_info)
 
 			except websockets.exceptions.ConnectionClosed: pass
 			except KeyError: cwt("Malformed client message: \n{}".format(json.dumps(msgParsed, indent=2, sort_keys=True)))
@@ -222,9 +219,25 @@ signal.signal(signal.SIGINT, stoprun)
 
 #######
 # Bootstrap code
+VERSION    = "1.1"
+date		= datetime.now().date()
+DoW			= date.strftime("%A")
+digit_regx	= '^[0-9]+$'
+shutdown	= False
+actions		= ["NULL",'RECON','BGCHK','CONFIG']
 if addr == '':	addr_human = "localhost"
 else:			addr_human = addr
-shutdown = False
+# This dictionary defines the dummy reply when checking the badge "TEST"
+dummy_response = dict(
+	name		= "Edward Richardson",
+	badge		= "RRU-28413",
+	badge_t		= "staff",
+	badge_n		= 765,
+	hr_total	= 30,
+	hr_worked	= 0,
+	r_code		= 200
+)
+
 cwt("Server v{} starting on {} ({})".format(VERSION, date, DoW))
 server = websockets.serve(handleMessage, addr, port)
 cwt("  Listening on {}:{}".format(addr_human, port))
