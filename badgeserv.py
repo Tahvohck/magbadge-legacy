@@ -220,7 +220,7 @@ signal.signal(signal.SIGINT, stoprun)
 
 #######
 # Bootstrap code
-VERSION    = "1.1"
+VERSION    = "1.1.1"
 date		= datetime.now().date()
 DoW			= date.strftime("%A")
 digit_regx	= '^[0-9]+$'
@@ -236,7 +236,8 @@ dummy_response = dict(
 	badge_n		= 765,
 	hr_total	= 30,
 	hr_worked	= 0,
-	r_code		= 200
+	r_code		= 200,
+	ribbon		= "no ribbon"
 )
 
 cwt("Server v{} starting on {} ({})".format(VERSION, date, DoW))
