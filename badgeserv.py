@@ -15,7 +15,7 @@ import websockets
 #####'''
 addr	= ''
 port	= 28000
-logfile	= "Thursday-lunch.csv"
+logfile	= "staging.csv"
 crtfile	= "client.crt"
 keyfile	= "client.key"
 
